@@ -203,7 +203,7 @@ Have questions or need help?
 
 <div align="center">
 
-**Made with ❤️ by developers, for developers**
+
 
 ⭐ Star this repo if you find it helpful!
 
