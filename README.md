@@ -81,6 +81,3 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-<p align="center">
-  Built with ❤️ using React & Google Gemini
-</p>
