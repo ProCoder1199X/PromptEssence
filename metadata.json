@@ -1,0 +1,5 @@
+{
+  "name": "PromptBridge",
+  "description": "Transform messy user text into a perfectly structured and optimized prompt",
+  "requestFramePermissions": []
+}
