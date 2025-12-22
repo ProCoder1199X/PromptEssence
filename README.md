@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61DAFB.svg?style=flat&logo=react)
 ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38B2AC.svg?style=flat&logo=tailwind-css)
-![Gemini](https://img.shields.io/badge/AI-Gemini%20Flash%202.5-8E75B2.svg?style=flat&logo=google)
+
 
 **AI understands you now.**  
 PromptBridge transforms messy, unstructured thoughts into crystal-clear, optimized prompts ready for any LLM (ChatGPT, Claude, Gemini, etc.).
