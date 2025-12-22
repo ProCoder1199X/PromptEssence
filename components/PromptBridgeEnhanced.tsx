@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Sparkles, Copy, Check, History, Wand2, Zap, RefreshCw, Download, Upload, Target, Lightbulb, TrendingUp, BarChart, X } from 'lucide-react';
 import { AppStatus, PromptVersion, PromptAnalysis, Template, OptimizationMode, TargetAI } from '../types';
 import { optimizePrompt } from '../services/geminiService';
+import Button from './Button';
 
 const PromptBridgeEnhanced: React.FC = () => {
   const [input, setInput] = useState('');
@@ -558,7 +559,7 @@ Example: 'need python code to read csv file and make graphs showing sales trends
               </div>
             </div>
 
-            <button
+            <Button
               onClick={optimizePromptWithAI}
               disabled={!input.trim() || status === AppStatus.LOADING}
               className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40 disabled:hover:shadow-lg"
@@ -566,7 +567,7 @@ Example: 'need python code to read csv file and make graphs showing sales trends
             >
               <Wand2 className="w-5 h-5" aria-hidden="true" />
               {status === AppStatus.LOADING ? 'Optimizing...' : 'Optimize Prompt'}
-            </button>
+            </Button>
           </div>
 
           {/* Analysis Panel */}
