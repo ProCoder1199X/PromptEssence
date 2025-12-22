@@ -15,3 +15,30 @@ export interface PromptState {
   status: AppStatus;
   errorMessage?: string;
 }
+
+export interface PromptVersion {
+  id: string;
+  input: string;
+  output: string;
+  timestamp: number;
+  score?: number;
+}
+
+export interface PromptAnalysis {
+  clarity: number;
+  specificity: number;
+  structure: number;
+  completeness: number;
+  suggestions: string[];
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  icon: string;
+  category: string;
+  template: string;
+}
+
+export type OptimizationMode = 'balanced' | 'creative' | 'precise' | 'coding';
+export type TargetAI = 'general' | 'chatgpt' | 'claude' | 'gemini';
