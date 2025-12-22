@@ -1,7 +1,25 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { AppStatus, PromptState } from '../types';
 import { optimizePrompt } from '../services/geminiService';
 import Button from './Button';
+
+type OptimizationMode = 'balanced' | 'creative' | 'precise' | 'coding';
+type TargetModel = 'general' | 'chatgpt' | 'claude' | 'gemini';
+
+interface PromptAnalysis {
+  clarity: number;
+  specificity: number;
+  structure: number;
+  completeness: number;
+  suggestions: string[];
+}
+
+interface HistoryItem {
+  id: string;
+  input: string;
+  output: string;
+  createdAt: number;
+}
 
 const PromptEditor: React.FC = () => {
   const [state, setState] = useState<PromptState>({
@@ -11,9 +29,67 @@ const PromptEditor: React.FC = () => {
   });
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
+  const [mode, setMode] = useState<OptimizationMode>('balanced');
+  const [targetModel, setTargetModel] = useState<TargetModel>('general');
+  const [analysis, setAnalysis] = useState<PromptAnalysis | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   
   // Optimization: Derived state instead of useEffect
   const charCount = state.input.length;
+
+  // Lightweight, local prompt analysis so anyone can see how to improve their text
+  const analyzePrompt = useCallback((text: string): PromptAnalysis => {
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const hasQuestions = text.includes('?');
+    const hasConstraints = /constraint|requirement|must|should|need|limit|only/i.test(text);
+    const hasContext = words > 20;
+    const hasStructure = text.includes('\n') || text.includes('-') || /\d\./.test(text);
+
+    const clarity = Math.min(100, (words / 50) * 100);
+    const specificity = Math.min(
+      100,
+      (hasQuestions ? 25 : 0) +
+        (hasConstraints ? 35 : 0) +
+        (hasContext ? 25 : 0)
+    );
+    const structure = hasStructure ? 85 : 40;
+    const completeness = Math.round((clarity + specificity + structure) / 3);
+
+    const suggestions: string[] = [];
+    if (clarity < 50) suggestions.push('Add a bit more detail about what you want.');
+    if (!hasConstraints) suggestions.push('Mention constraints like tools, time, or limits.');
+    if (!hasStructure) suggestions.push('Use short bullet points for steps, inputs, and outputs.');
+    if (words < 10) suggestions.push('Give a sentence of context so the AI understands the situation.');
+
+    return { clarity, specificity, structure, completeness, suggestions };
+  }, []);
+
+  // Update analysis as the user types (with a small delay so it feels smooth)
+  useEffect(() => {
+    if (state.input.trim().length > 10) {
+      const timer = setTimeout(() => {
+        setAnalysis(analyzePrompt(state.input));
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+    setAnalysis(null);
+  }, [state.input, analyzePrompt]);
+
+  // Load history from localStorage on first mount
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return;
+      const raw = window.localStorage.getItem('promptbridge_history');
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as HistoryItem[];
+      if (Array.isArray(parsed)) {
+        setHistory(parsed);
+      }
+    } catch {
+      // Ignore corrupt local data
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setState(prev => ({ ...prev, input: e.target.value }));
@@ -25,12 +101,40 @@ const PromptEditor: React.FC = () => {
     setState(prev => ({ ...prev, status: AppStatus.LOADING, errorMessage: undefined }));
 
     try {
+      // Add a lightweight config header so the AI can adapt style/model
+      const payload = `[[CONFIG]]
+mode: ${mode}
+target_model: ${targetModel}
+[[/CONFIG]]
+
+${state.input}`;
+
       const optimizedText = await optimizePrompt(state.input);
       setState(prev => ({
         ...prev,
         output: optimizedText,
         status: AppStatus.SUCCESS,
       }));
+
+      // Save to local history (for quick reuse)
+      const newItem: HistoryItem = {
+        id: Date.now().toString(),
+        input: state.input,
+        output: optimizedText,
+        createdAt: Date.now(),
+      };
+      setHistory(prev => {
+        const next = [newItem, ...prev].slice(0, 10);
+        try {
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('promptbridge_history', JSON.stringify(next));
+          }
+        } catch {
+          // Ignore storage errors
+        }
+        return next;
+      });
+      setSelectedHistoryId(newItem.id);
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Something went wrong";
       setState(prev => ({
@@ -61,6 +165,17 @@ const PromptEditor: React.FC = () => {
     });
   };
 
+  const handleHistoryClick = (item: HistoryItem) => {
+    setSelectedHistoryId(item.id);
+    setState(prev => ({
+      ...prev,
+      input: item.input,
+      output: item.output,
+      status: AppStatus.SUCCESS,
+      errorMessage: undefined,
+    }));
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Ctrl/Cmd + Enter to optimize
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -71,6 +186,45 @@ const PromptEditor: React.FC = () => {
 
   return (
     <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-12 flex flex-col animate-slide-up z-10">
+      
+      {/* Global controls: anyone can quickly pick a style + target AI */}
+      <div className="w-full mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-slate-500">Style</span>
+          {(['balanced', 'creative', 'precise', 'coding'] as OptimizationMode[]).map(option => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setMode(option)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                mode === option
+                  ? 'bg-accent text-white border-accent'
+                  : 'bg-[#111] text-slate-400 border-slate-800 hover:border-slate-600'
+              }`}
+            >
+              {option.charAt(0).toUpperCase() + option.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-slate-500">Target AI</span>
+          {(['general', 'chatgpt', 'claude', 'gemini'] as TargetModel[]).map(model => (
+            <button
+              key={model}
+              type="button"
+              onClick={() => setTargetModel(model)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                targetModel === model
+                  ? 'bg-white/10 text-sky-300 border-sky-500/60'
+                  : 'bg-[#111] text-slate-400 border-slate-800 hover:border-slate-600'
+              }`}
+            >
+              {model === 'general' ? 'Any LLM' : model.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
       
       {/* Cards Container */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 min-h-[500px]">
@@ -84,6 +238,11 @@ const PromptEditor: React.FC = () => {
             </h2>
             <div className="flex items-center gap-3">
               <span className="text-xs text-slate-600 font-mono">{charCount} chars</span>
+              {analysis && (
+                <span className="text-xs text-slate-500 font-mono">
+                  Clarity score: <span className="text-sky-400">{analysis.completeness}%</span>
+                </span>
+              )}
               {state.input && (
                 <button
                   onClick={handleClear}
@@ -111,6 +270,35 @@ e.g. 'I need a python script to scan a pdf and extract names but make it handle 
             />
           </div>
         </div>
+
+        {/* Lightweight guidance card so non-experts know how to improve their ask */}
+        {analysis && (
+          <div className="lg:col-span-2 mt-2 text-xs text-slate-400">
+            <div className="mt-2 p-4 bg-gradient-to-r from-slate-900/80 to-slate-900/40 rounded-xl border border-slate-800/70">
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-semibold text-slate-200 text-sm">Prompt quality snapshot</p>
+                <div className="flex gap-2 text-[10px]">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">
+                    Clarity {analysis.clarity}%
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">
+                    Specificity {analysis.specificity}%
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">
+                    Structure {analysis.structure}%
+                  </span>
+                </div>
+              </div>
+              {analysis.suggestions.length > 0 && (
+                <ul className="list-disc list-inside space-y-1">
+                  {analysis.suggestions.map((tip, idx) => (
+                    <li key={idx}>{tip}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Right Card: Output */}
         <div className="glass-panel rounded-xl p-1 flex flex-col transition-all duration-300 glow-hover group h-full relative overflow-hidden">
@@ -269,6 +457,44 @@ e.g. 'I need a python script to scan a pdf and extract names but make it handle 
                 <p className="leading-relaxed opacity-80">We restructure your request into the perfect LLM instruction.</p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* History: recent optimized prompts for quick reuse */}
+      {history.length > 0 && (
+        <div className="mt-6 p-4 bg-[#0b0b0b] border border-slate-800/70 rounded-xl">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+              <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Recent prompts
+            </h3>
+            <span className="text-[10px] uppercase tracking-wide text-slate-500">
+              Tap to reuse
+            </span>
+          </div>
+          <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
+            {history.map(item => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleHistoryClick(item)}
+                className={`w-full text-left px-3 py-2 rounded-lg text-xs border transition-colors ${
+                  selectedHistoryId === item.id
+                    ? 'bg-white/5 border-accent/60 text-slate-100'
+                    : 'bg-transparent border-slate-800 text-slate-400 hover:bg-white/5 hover:border-slate-600'
+                }`}
+              >
+                <div className="line-clamp-1">
+                  {item.input || 'Untitled prompt'}
+                </div>
+                <div className="mt-0.5 text-[10px] text-slate-600">
+                  {new Date(item.createdAt).toLocaleTimeString()}
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       )}
