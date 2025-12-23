@@ -1,10 +1,10 @@
-# PromptBridge
+# PromptEssence
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-19-61DAFB.svg?style=flat&logo=react)
 ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38B2AC.svg?style=flat&logo=tailwind-css)
 
-PromptBridge is a cutting-edge tool designed to transform unstructured ideas into clear, optimized prompts suitable for any large language model (LLM), including ChatGPT, Claude, and Gemini.
+PromptEssence is a cutting-edge tool designed to transform unstructured ideas into clear, optimized prompts suitable for any large language model (LLM), including ChatGPT, Claude, and Gemini.
 
 ---
 
@@ -62,7 +62,7 @@ PromptBridge is a cutting-edge tool designed to transform unstructured ideas int
 
 ## Contributing
 
-We welcome contributions to enhance PromptBridge. To contribute:
+We welcome contributions to enhance PromptEssence. To contribute:
 
 1. Fork the repository.
 2. Create a new branch for your feature (`git checkout -b feature/YourFeatureName`).

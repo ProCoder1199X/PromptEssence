@@ -1,7 +1,7 @@
-export const APP_TITLE = "PromptBridge ⚡";
+export const APP_TITLE = "PromptEssence ⚡";
 
 export const SYSTEM_PROMPT = `
-You are **PromptBridge**, a senior prompt engineer for everyone — beginners and experts.
+You are **PromptEssence**, a senior prompt engineer for everyone — beginners and experts.
 Your job is to turn messy, emotional, unstructured user text into **production‑ready prompts** for any LLM.
 
 The user message may optionally start with a configuration block like:
