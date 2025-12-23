@@ -1,42 +1,51 @@
 import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  icon?: React.ReactNode;
 }
 
-const Button: React.FC<ButtonProps> = ({ 
-  children, 
-  variant = 'primary', 
-  isLoading = false, 
-  className = '', 
+const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  isLoading = false,
+  className = '',
   disabled,
-  ...props 
+  icon,
+  ...props
 }) => {
-  const baseStyles = "relative font-semibold transition-all duration-300 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 active:scale-95 disabled:active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed";
-  
+  const baseStyles = "relative font-medium transition-all duration-300 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background active:scale-[0.98] disabled:active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden";
+
   const variants = {
-    primary: "bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg px-6 py-3 text-lg tracking-wide",
-    secondary: "bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600 rounded-lg px-4 py-2 text-sm",
-    ghost: "bg-transparent hover:bg-gray-800 text-gray-400 hover:text-white rounded-lg p-2",
+    primary: "bg-accent hover:bg-accentHover text-white shadow-lg shadow-accent/25 hover:shadow-accent/40 border border-white/10",
+    secondary: "bg-white/5 hover:bg-white/10 text-white border border-white/10 backdrop-blur-sm",
+    ghost: "bg-transparent hover:bg-white/5 text-slate-400 hover:text-white",
+    outline: "bg-transparent border border-white/20 text-slate-300 hover:text-white hover:border-white/40 hover:bg-white/5"
+  };
+
+  const sizes = {
+    sm: "text-xs px-3 py-1.5 rounded-lg",
+    md: "text-sm px-5 py-2.5 rounded-xl",
+    lg: "text-base px-8 py-4 rounded-2xl"
   };
 
   return (
     <button
-      className={`${baseStyles} ${variants[variant]} ${className}`}
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={isLoading || disabled}
       {...props}
     >
-      {isLoading ? (
-        <div className="flex items-center gap-2">
-          <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="animate-pulse">Loading...</span>
-        </div>
-      ) : (
-        children
+      {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+      {!isLoading && icon && <span className="w-4 h-4">{icon}</span>}
+      <span>{children}</span>
+
+      {/* Shine effect for primary buttons */}
+      {variant === 'primary' && !disabled && !isLoading && (
+        <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
       )}
     </button>
   );

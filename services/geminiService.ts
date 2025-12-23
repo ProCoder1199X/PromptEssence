@@ -3,14 +3,7 @@ import { SYSTEM_PROMPT, GEMINI_MODEL } from "../constants";
 
 // Safely retrieve API Key
 const getApiKey = () => {
-  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-    return process.env.API_KEY;
-  }
-  // In some build environments or safe shims
-  if (typeof window !== 'undefined' && (window as any).process && (window as any).process.env) {
-    return (window as any).process.env.API_KEY;
-  }
-  return '';
+  return import.meta.env.VITE_GEMINI_API_KEY || '';
 };
 
 const API_KEY = getApiKey();
@@ -29,7 +22,7 @@ if (API_KEY) {
  */
 export const optimizePrompt = async (userPrompt: string): Promise<string> => {
   if (!ai) {
-     throw new Error("API Key is missing. Please configure process.env.API_KEY.");
+    throw new Error("API Key is missing. Please configure process.env.API_KEY.");
   }
 
   if (!userPrompt.trim()) {
@@ -55,7 +48,7 @@ export const optimizePrompt = async (userPrompt: string): Promise<string> => {
   } catch (error) {
     console.error("Gemini API Error:", error);
     if (error instanceof Error) {
-        throw new Error(`Optimization failed: ${error.message}`);
+      throw new Error(`Optimization failed: ${error.message}`);
     }
     throw new Error("An unexpected error occurred while optimizing the prompt.");
   }
