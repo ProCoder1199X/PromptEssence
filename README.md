@@ -16,7 +16,7 @@ PromptBridge is a cutting-edge tool designed to transform unstructured ideas int
 - **Developer Tools:** Includes keyboard shortcuts (e.g., `Ctrl/Cmd + Enter`), clipboard functionality, and raw text mode.
 - **Privacy First:** All processing is client-side, ensuring your data remains secure.
 
-## Technology Stack
+## Tech Stack
 
 - **Frontend:** React 19, TypeScript
 - **Styling:** Tailwind CSS (Dark Mode)
